@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "256792803687",
+    "project_id": "juntos-em-ordem",
+    "storage_bucket": "juntos-em-ordem.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:256792803687:android:e5c1635a2f02b5104897c2",
+        "android_client_info": {
+          "package_name": "br.com.juntos_em_ordem"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA53DPyCmVhSxUVw8TT8sBBtsPpUmw-W3c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:256792803687:android:cb31f12937b45de94897c2",
+        "android_client_info": {
+          "package_name": "com.example.juntos_em_ordem"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA53DPyCmVhSxUVw8TT8sBBtsPpUmw-W3c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

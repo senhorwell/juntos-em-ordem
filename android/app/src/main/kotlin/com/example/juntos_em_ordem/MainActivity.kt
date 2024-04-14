@@ -1,4 +1,4 @@
-package com.example.juntos_em_ordem
+package br.com.juntos_em_ordem
 
 import io.flutter.embedding.android.FlutterActivity
 

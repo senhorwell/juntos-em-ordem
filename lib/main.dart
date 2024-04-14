@@ -1,7 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'package:firebase_database/firebase_database.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeFirebase();
   runApp(const MyApp());
+}
+
+initializeFirebase() async {
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+);
 }
 
 class MyApp extends StatelessWidget {
@@ -56,8 +67,18 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+FirebaseDatabase database = FirebaseDatabase.instance;
 
+
+configuraPessoa() {
+  DatabaseReference ref = FirebaseDatabase.instance.ref("");
+  ref.set({
+    'nome': 'João',
+    'idade': 25,
+  });
+}
   void _incrementCounter() {
+    configuraPessoa();
     setState(() {
       // This call to setState tells the Flutter framework that something has
       // changed in this State, which causes it to rerun the build method below
