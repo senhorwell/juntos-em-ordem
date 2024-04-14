@@ -58,7 +58,9 @@ class DefaultFirebaseOptions {
     messagingSenderId: '256792803687',
     projectId: 'juntos-em-ordem',
     authDomain: 'juntos-em-ordem.firebaseapp.com',
+    databaseURL: 'https://juntos-em-ordem-default-rtdb.firebaseio.com',
     storageBucket: 'juntos-em-ordem.appspot.com',
     measurementId: 'G-WJ63X0N75K',
   );
+
 }
