@@ -12,6 +12,7 @@ class _HomePageState extends State<HomePage> {
   FirebaseDatabase database = FirebaseDatabase.instance;
   late DatabaseReference todos;
   Future? todosFuture;
+  bool isEditing = false;
 
   final List<String> images = [
     'assets/pessoas/jheni.png',
@@ -25,7 +26,7 @@ class _HomePageState extends State<HomePage> {
   List<ChecklistItem> items = [];
 
   String selectedValue = 'Jheni';
-  String? textInput;
+  late TextEditingController textInput = TextEditingController();
 
   @override
   void initState() {
@@ -36,7 +37,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   getTodos(String nome) {
-    todos = database.ref().child(nome);
+    todos = database.ref().child(nome.toLowerCase());
     items = [];
     todos.once().then((snapshot) {
       Map<dynamic, dynamic> values =
@@ -66,7 +67,7 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Padding(
-                  padding: const EdgeInsets.all(10.0),
+                  padding: const EdgeInsets.all(70.0),
                   child: SizedBox(
                     height: 200,
                     child: ListView.builder(
@@ -119,7 +120,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(30.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 30),
                   child: Column(
                     children: [
                       ListView.builder(
@@ -150,11 +151,93 @@ class _HomePageState extends State<HomePage> {
                                   "feito": items[index].isSelected ? 1 : 0,
                                 });
                               },
+                              trailing: !items[index].isSelected
+                                  ? IconButton(
+                                      icon: const Icon(Icons.delete),
+                                      onPressed: () async {
+                                        DatabaseReference ref = FirebaseDatabase
+                                            .instance
+                                            .ref(items[index].pessoa)
+                                            .child(items[index].id);
+                                        await ref.remove();
+
+                                        setState(() {
+                                          items.removeAt(index);
+                                        });
+                                      },
+                                    )
+                                  : null,
                             ),
                           );
                         },
                       ),
                     ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 30),
+                  child: Card(
+                    child: ListTile(
+                      title: isEditing
+                          ? SizedBox(
+                              height: 30,
+                              child: TextField(
+                                controller: textInput,
+                                autofocus: true,
+                                decoration: const InputDecoration(
+                                  hintText: 'Digite o título...',
+                                  border: InputBorder.none,
+                                ),
+                                onSubmitted: (value) {
+                                  if (textInput.text.isEmpty) {
+                                    return;
+                                  }
+                                  DatabaseReference ref = FirebaseDatabase
+                                      .instance
+                                      .ref(selectedValue.toLowerCase())
+                                      .push();
+                                  ref.set({
+                                    "atividade": textInput.text,
+                                    "feito": 0,
+                                  });
+                                  getTodos(selectedValue);
+                                  setState(() {
+                                    isEditing = false;
+                                  });
+                                },
+                              ),
+                            )
+                          : const Text('Adicionar novo'),
+                      trailing: isEditing
+                          ? IconButton(
+                              icon: const Icon(Icons.send),
+                              onPressed: () {
+                                if (textInput.text == "") {
+                                  return;
+                                }
+                                DatabaseReference ref = FirebaseDatabase
+                                    .instance
+                                    .ref(selectedValue.toLowerCase())
+                                    .push();
+                                ref.set({
+                                  "atividade": textInput.text,
+                                  "feito": 0,
+                                });
+                                getTodos(selectedValue);
+                                setState(() {
+                                  isEditing = false;
+                                });
+                              },
+                            )
+                          : IconButton(
+                              icon: const Icon(Icons.add),
+                              onPressed: () {
+                                setState(() {
+                                  isEditing = true;
+                                });
+                              },
+                            ),
+                    ),
                   ),
                 ),
               ],
@@ -169,7 +252,7 @@ class _HomePageState extends State<HomePage> {
             context: context,
             builder: (BuildContext context) {
               return Dialog(
-                backgroundColor: Color.fromARGB(255, 243, 229, 220),
+                backgroundColor: const Color.fromARGB(255, 243, 229, 220),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -187,7 +270,7 @@ class _HomePageState extends State<HomePage> {
                       padding: const EdgeInsets.all(30.0),
                       child: TextField(
                         onChanged: (value) {
-                          textInput = value;
+                          textInput.text = value;
                         },
                         decoration: InputDecoration(
                           focusedBorder: const OutlineInputBorder(
@@ -223,7 +306,7 @@ class _HomePageState extends State<HomePage> {
                                 borderRadius: BorderRadius.circular(10.0),
                               ))),
                           onPressed: () {
-                            if (textInput == null) {
+                            if (textInput.text.isEmpty) {
                               return;
                             }
                             DatabaseReference ref = FirebaseDatabase.instance
@@ -248,7 +331,6 @@ class _HomePageState extends State<HomePage> {
             },
           );
         },
-        tooltip: 'Increment',
         child: const Icon(
           Icons.add,
           color: Colors.white,
