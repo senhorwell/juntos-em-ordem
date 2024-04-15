@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 
@@ -9,7 +10,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  FirebaseDatabase databaase = FirebaseDatabase.instance;
+  FirebaseDatabase database = FirebaseDatabase.instance;
+  late DatabaseReference todos = database.ref().child("jheni");
 
   final List<String> images = [
     'assets/pessoas/jheni.png',
@@ -19,83 +21,92 @@ class _HomePageState extends State<HomePage> {
     'assets/pessoas/julia.png',
   ];
 
-  List<ChecklistItem> items = [
-    ChecklistItem(title: 'Item 1'),
-    ChecklistItem(title: 'Item 2'),
-    ChecklistItem(title: 'Item 3'),
-    ChecklistItem(title: 'Item 4'),
-    ChecklistItem(title: 'Item 5'),
-    ChecklistItem(title: 'Item 6'),
-    ChecklistItem(title: 'Item 7'),
-    ChecklistItem(title: 'Item 8'),
-    ChecklistItem(title: 'Item 9'),
-    ChecklistItem(title: 'Item 3'),
-    ChecklistItem(title: 'Item 3'),
-    ChecklistItem(title: 'Item 3'),
-    ChecklistItem(title: 'Item 3'),
-    ChecklistItem(title: 'Item 3'),
-  ];
+  List<ChecklistItem> items = [];
 
+  @override
+  void initState() {
+    getTodos('jheni');
+    super.initState();
+  }
+
+  getTodos(String nome) {
+    todos = database.ref().child(nome.toLowerCase());
+    items = [];
+    todos.once().then((snapshot) {
+      Map<dynamic, dynamic> values =
+          snapshot.snapshot.value as Map<dynamic, dynamic>;
+      values.forEach((key, value) {
+          setState(() {
+          items.add(ChecklistItem(title: value["atividade"]));
+        });
+      });
+    });
+
+    
+  
+  } 
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('Juntos em Ordem'),
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(
-          height: MediaQuery.of(context).size.height * 0.2, // 20% da altura da tela
-          child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          itemCount: images.length,
-          itemBuilder: (context, index) {
-            return GestureDetector(
-              onTap: () {
-                // Ação ao clicar na imagem
-                print('Imagem $index clicada!');
-              },
-              child: AspectRatio(
-                aspectRatio: 1, // Para manter a imagem quadrada
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ClipOval(
-                    child: Image.asset(
-                      images[index],
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-          SingleChildScrollView(
-            child: SizedBox(
-              width: MediaQuery.of(context).size.width,
-              height: MediaQuery.of(context).size.height * 0.7,
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SizedBox(
+              height: 200,
               child: ListView.builder(
-                itemCount: items.length,
+                scrollDirection: Axis.horizontal,
+                itemCount: images.length,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
                 itemBuilder: (context, index) {
-                  return Card(
-                    color: items[index].isSelected ? Colors.green : null,
-                    child: ListTile(
-                      title: Text(items[index].title),
-                      onTap: () {
-                        setState(() {
-                          items[index].isSelected = !items[index].isSelected;
-                        });
-                      },
+                  return GestureDetector(
+                    onTap: () {
+                      String arquivo = images[index].split('/').last;
+                      getTodos(arquivo.split('.').first);
+                    },
+                    child: AspectRatio(
+                      aspectRatio: 1, // Para manter a imagem quadrada
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: ClipOval(
+                          child: Image.asset(
+                            images[index],
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
                     ),
                   );
                 },
               ),
             ),
-          )
-        ],
+            Column(
+              children: [
+                ListView.builder(
+                  itemCount: items.length,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemBuilder: (context, index) {
+                    return Card(
+                      color: items[index].isSelected ? Colors.green : null,
+                      child: ListTile(
+                        title: Text('${items[index].title} ${index + 1}'),
+                        onTap: () {
+                          setState(() {
+                            items[index].isSelected = !items[index].isSelected;
+                          });
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -151,8 +162,13 @@ class _HomePageState extends State<HomePage> {
                 actions: <Widget>[
                   ElevatedButton(
                     child: const Text('Enviar'),
-                    onPressed: () {
-                      Navigator.of(context).pop();
+                    onPressed: () async {
+                      DatabaseReference ref = FirebaseDatabase.instance.ref(selectedValue!.toLowerCase()).push();
+                      await ref.set({
+                        "atividade": textInput,
+                        "feito": 0,
+                        "periodico" : dateInput,
+                      });
                     },
                   ),
                 ],
