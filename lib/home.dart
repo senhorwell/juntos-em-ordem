@@ -21,12 +21,18 @@ class _HomePageState extends State<HomePage> {
     'assets/pessoas/helena.png',
     'assets/pessoas/julia.png',
   ];
+  late List<bool> selectedImages;
 
   List<ChecklistItem> items = [];
 
+  String selectedValue = 'Jheni';
+  String? textInput;
+  String? dateInput;
   @override
   void initState() {
     super.initState();
+    selectedImages = List<bool>.filled(images.length, false);
+    selectedImages[0] = true;
     todosFuture = getTodos("jheni");
   }
 
@@ -38,7 +44,7 @@ class _HomePageState extends State<HomePage> {
           snapshot.snapshot.value as Map<dynamic, dynamic>;
       values.forEach((key, value) {
         setState(() {
-          items.add(ChecklistItem(title: value["atividade"], isSelected: value["feito"] == 1 ? true : false));
+          items.add(ChecklistItem(id: key, pessoa: nome, title: value["atividade"], isSelected: value["feito"] == 1 ? true : false));
         });
       });
     });
@@ -65,20 +71,35 @@ class _HomePageState extends State<HomePage> {
                   itemBuilder: (context, index) {
                     return GestureDetector(
                       onTap: () {
+                        setState(() {
+                          selectedImages = List<bool>.filled(images.length, false);
+                          selectedImages[index] = !selectedImages[index];
+                        });
                         String arquivo = images[index].split('/').last;
                         getTodos(arquivo.split('.').first);
                       },
-                      child: AspectRatio(
-                        aspectRatio: 1,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: ClipOval(
-                            child: Image.asset(
-                              images[index],
-                              fit: BoxFit.cover,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          if (selectedImages[index])
+                            CircleAvatar(
+                              radius: 100,
+                              backgroundColor: Colors.blue.withOpacity(0.3),
+                            ),
+                          AspectRatio(
+                            aspectRatio: 1,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: ClipOval(
+                                child: Image.asset(
+                                  images[index],
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
+                          
+                        ],
                       ),
                     );
                   },
@@ -95,9 +116,13 @@ class _HomePageState extends State<HomePage> {
                         color: items[index].isSelected ? Colors.green : null,
                         child: ListTile(
                           title: Text(items[index].title),
-                          onTap: () {
+                          onTap: () async {
                             setState(() {
                               items[index].isSelected = !items[index].isSelected;
+                            });
+                            DatabaseReference ref = FirebaseDatabase.instance.ref(items[index].pessoa).child(items[index].id);
+                            await ref.update({
+                              "feito": items[index].isSelected ? 1 : 0,
                             });
                           },
                         ),
@@ -117,31 +142,29 @@ class _HomePageState extends State<HomePage> {
           showDialog(
             context: context,
             builder: (BuildContext context) {
-              String? selectedValue = 'Jheni';
-              String? textInput;
-              String? dateInput;
+
               return AlertDialog(
                 title: const Text('Selecione uma pessoa'),
                 content: Column(
                   children: [
-                    DropdownButton<String>(
+                    DropdownButton(
                       hint: const Text('Selecione uma opção'),
                       value: selectedValue,
-                      items: <String>[
+                      items: [
                         'Jheni',
                         'Well',
                         'Alice',
                         'Helena',
                         'Julia'
                       ].map((String value) {
-                        return DropdownMenuItem<String>(
+                        return DropdownMenuItem(
                           value: value,
                           child: Text(value.toString()),
                         );
                       }).toList(),
                       onChanged: (newValue) {
                         setState(() {
-                          selectedValue = newValue;
+                          selectedValue = newValue!;
                         });
                       },
                     ),
@@ -173,6 +196,7 @@ class _HomePageState extends State<HomePage> {
                         "feito": 0,
                         "periodico" : dateInput,
                       });
+                      Navigator.of(context).pop();
                     },
                   ),
                 ],
@@ -190,6 +214,8 @@ class _HomePageState extends State<HomePage> {
 class ChecklistItem {
   String title;
   bool isSelected;
+  String id;
+  String pessoa;
 
-  ChecklistItem({required this.title, required this.isSelected});
+  ChecklistItem({required this.id, required this.title, required this.isSelected, required this.pessoa});
 }
