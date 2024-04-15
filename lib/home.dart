@@ -95,14 +95,18 @@ class _HomePageState extends State<HomePage> {
                                   radius: 100,
                                   backgroundColor: Color(0xffb5b4a3),
                                 ),
-                              AspectRatio(
-                                aspectRatio: 1,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: ClipOval(
-                                    child: Image.asset(
-                                      images[index],
-                                      fit: BoxFit.cover,
+                              AnimatedOpacity(
+                                duration: const Duration(seconds: 1),
+                                opacity: !selectedImages[index] ? 0.3 : 1,
+                                child: AspectRatio(
+                                  aspectRatio: 1,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: ClipOval(
+                                      child: Image.asset(
+                                        images[index],
+                                        fit: BoxFit.cover,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -209,15 +213,19 @@ class _HomePageState extends State<HomePage> {
                         height: 50,
                         child: ElevatedButton(
                           style: ButtonStyle(
-                            backgroundColor: MaterialStateProperty.resolveWith<Color?>(
-                              (states) => const Color(0xffaead98),
-                            ),
+                              backgroundColor:
+                                  MaterialStateProperty.resolveWith<Color?>(
+                                (states) => const Color(0xffaead98),
+                              ),
                               shape: MaterialStateProperty.all<
                                       RoundedRectangleBorder>(
                                   RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10.0),
-                          ))),
+                                borderRadius: BorderRadius.circular(10.0),
+                              ))),
                           onPressed: () {
+                            if (textInput == null) {
+                              return;
+                            }
                             DatabaseReference ref = FirebaseDatabase.instance
                                 .ref(selectedValue.toLowerCase())
                                 .push();
@@ -227,7 +235,10 @@ class _HomePageState extends State<HomePage> {
                             });
                             Navigator.of(context).pop();
                           },
-                          child: const Text('Enviar', style: TextStyle(color: Colors.white, fontSize: 20),),
+                          child: const Text(
+                            'Enviar',
+                            style: TextStyle(color: Colors.white, fontSize: 20),
+                          ),
                         ),
                       ),
                     ),
