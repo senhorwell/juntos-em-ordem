@@ -12,6 +12,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   FirebaseDatabase database = FirebaseDatabase.instance;
   late DatabaseReference todos;
+  Future? todosFuture;
 
   final List<String> images = [
     'assets/pessoas/jheni.png',
@@ -26,12 +27,13 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    todosFuture = getTodos("jheni");
   }
 
-  getTodos(String nome) async {
+  getTodos(String nome) {
     todos = database.ref().child(nome);
     items = [];
-    await todos.once().then((snapshot) {
+    todos.once().then((snapshot) {
       Map<dynamic, dynamic> values =
           snapshot.snapshot.value as Map<dynamic, dynamic>;
       values.forEach((key, value) {
@@ -46,7 +48,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: FutureBuilder(
-        future: getTodos("jheni"),
+        future: todosFuture,
         builder: (context, snapshot) {
           return SingleChildScrollView(
           child: Column(
