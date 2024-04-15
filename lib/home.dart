@@ -11,7 +11,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   FirebaseDatabase database = FirebaseDatabase.instance;
-  late DatabaseReference todos = database.ref().child("jheni");
+  late DatabaseReference todos;
 
   final List<String> images = [
     'assets/pessoas/jheni.png',
@@ -25,89 +25,91 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
-    getTodos('jheni');
     super.initState();
   }
 
-  getTodos(String nome) {
-    todos = database.ref().child(nome.toLowerCase());
+  getTodos(String nome) async {
+    todos = database.ref().child(nome);
     items = [];
-    todos.once().then((snapshot) {
+    await todos.once().then((snapshot) {
       Map<dynamic, dynamic> values =
           snapshot.snapshot.value as Map<dynamic, dynamic>;
       values.forEach((key, value) {
-          setState(() {
-          items.add(ChecklistItem(title: value["atividade"]));
+        setState(() {
+          items.add(ChecklistItem(title: value["atividade"], isSelected: value["feito"] == 1 ? true : false));
         });
       });
     });
-
-    
-  
   } 
   
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SizedBox(
-              height: 200,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: images.length,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemBuilder: (context, index) {
-                  return GestureDetector(
-                    onTap: () {
-                      String arquivo = images[index].split('/').last;
-                      getTodos(arquivo.split('.').first);
-                    },
-                    child: AspectRatio(
-                      aspectRatio: 1, // Para manter a imagem quadrada
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: ClipOval(
-                          child: Image.asset(
-                            images[index],
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-            Column(
-              children: [
-                ListView.builder(
-                  itemCount: items.length,
+      body: FutureBuilder(
+        future: getTodos("jheni"),
+        builder: (context, snapshot) {
+          return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                height: 200,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: images.length,
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemBuilder: (context, index) {
-                    return Card(
-                      color: items[index].isSelected ? Colors.green : null,
-                      child: ListTile(
-                        title: Text('${items[index].title} ${index + 1}'),
-                        onTap: () {
-                          setState(() {
-                            items[index].isSelected = !items[index].isSelected;
-                          });
-                        },
+                    return GestureDetector(
+                      onTap: () {
+                        String arquivo = images[index].split('/').last;
+                        getTodos(arquivo.split('.').first);
+                      },
+                      child: AspectRatio(
+                        aspectRatio: 1,
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: ClipOval(
+                            child: Image.asset(
+                              images[index],
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
                       ),
                     );
                   },
                 ),
-              ],
-            ),
-          ],
+              ),
+              Column(
+                children: [
+                  ListView.builder(
+                    itemCount: items.length,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemBuilder: (context, index) {
+                      return Card(
+                        color: items[index].isSelected ? Colors.green : null,
+                        child: ListTile(
+                          title: Text(items[index].title),
+                          onTap: () {
+                            setState(() {
+                              items[index].isSelected = !items[index].isSelected;
+                            });
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+        },
+
         ),
-      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           showDialog(
@@ -185,7 +187,7 @@ class _HomePageState extends State<HomePage> {
 
 class ChecklistItem {
   String title;
-  bool isSelected = false;
+  bool isSelected;
 
-  ChecklistItem({required this.title});
+  ChecklistItem({required this.title, required this.isSelected});
 }
