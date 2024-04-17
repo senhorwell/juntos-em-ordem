@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter/services.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -22,17 +23,20 @@ class _HomePageState extends State<HomePage> {
     'assets/pessoas/julia.png',
   ];
   late List<bool> selectedImages;
+  late List<int> selectedPoints = [0, 0, 0, 0, 0];
 
   List<ChecklistItem> items = [];
 
   String selectedValue = 'Jheni';
   late TextEditingController textInput = TextEditingController();
+  late TextEditingController pontoInput = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     selectedImages = List<bool>.filled(images.length, false);
     selectedImages[0] = true;
+    pontoInput.text = "20";
     todosFuture = getTodos("jheni");
   }
 
@@ -48,10 +52,49 @@ class _HomePageState extends State<HomePage> {
               id: key,
               pessoa: nome,
               title: value["atividade"],
+              ponto: int.parse(value["ponto"].toString()),
               isSelected: value["feito"] == 1 ? true : false));
         });
       });
     });
+  }
+
+  String getPoints(String nome) {
+    todos = database.ref().child(nome.toLowerCase());
+    items = [];
+    todos.once().then((snapshot) {
+      Map<dynamic, dynamic> values =
+          snapshot.snapshot.value as Map<dynamic, dynamic>;
+      values.forEach((key, value) {
+        setState(() {
+          selectedPoints[images.indexOf('assets/pessoas/$nome.png')] +=
+              int.parse(value["ponto"].toString());
+        });
+      });
+    });
+
+    return selectedPoints[images.indexOf('assets/pessoas/$nome.png')]
+        .toString();
+  }
+
+  salvarTarefa() {
+    if (textInput.text == "") {
+      return;
+    }
+
+    DatabaseReference ref =
+        FirebaseDatabase.instance.ref(selectedValue.toLowerCase()).push();
+    ref.set({
+      "atividade": textInput.text,
+      "ponto": pontoInput.text,
+      "feito": 0,
+    });
+
+    getTodos(selectedValue);
+    setState(() {
+      isEditing = false;
+    });
+    textInput.clear();
   }
 
   @override
@@ -137,7 +180,8 @@ class _HomePageState extends State<HomePage> {
                                   style: TextStyle(
                                       color: items[index].isSelected
                                           ? Colors.white
-                                          : Colors.black)),
+                                          : Colors.black,
+                                      fontSize: 20)),
                               onTap: () async {
                                 setState(() {
                                   items[index].isSelected =
@@ -166,7 +210,13 @@ class _HomePageState extends State<HomePage> {
                                         });
                                       },
                                     )
-                                  : null,
+                                  : AnimatedPadding(
+                                    padding: const EdgeInsets.all(10),
+                                    duration: const Duration(seconds: 3),
+                                    child: Text(items[index].ponto.toString(),
+                                        style: const TextStyle(
+                                            color: Colors.white, fontSize: 20)),
+                                  ),
                             ),
                           );
                         },
@@ -181,30 +231,38 @@ class _HomePageState extends State<HomePage> {
                       title: isEditing
                           ? SizedBox(
                               height: 30,
-                              child: TextField(
-                                controller: textInput,
-                                autofocus: true,
-                                decoration: const InputDecoration(
-                                  hintText: 'Digite o título...',
-                                  border: InputBorder.none,
-                                ),
-                                onSubmitted: (value) {
-                                  if (textInput.text.isEmpty) {
-                                    return;
-                                  }
-                                  DatabaseReference ref = FirebaseDatabase
-                                      .instance
-                                      .ref(selectedValue.toLowerCase())
-                                      .push();
-                                  ref.set({
-                                    "atividade": textInput.text,
-                                    "feito": 0,
-                                  });
-                                  getTodos(selectedValue);
-                                  setState(() {
-                                    isEditing = false;
-                                  });
-                                },
+                              child: Row(
+                                mainAxisSize: MainAxisSize.max,
+                                children: [
+                                  Expanded(
+                                    flex: 3,
+                                    child: TextField(
+                                      controller: textInput,
+                                      autofocus: true,
+                                      decoration: const InputDecoration(
+                                        hintText: 'Digite o título...',
+                                        border: InputBorder.none,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: TextField(
+                                      controller: pontoInput,
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.digitsOnly
+                                      ],
+                                      autofocus: true,
+                                      decoration: const InputDecoration(
+                                        hintText: 'Nota',
+                                        border: InputBorder.none,
+                                      ),
+                                      onSubmitted: (value) {
+                                        salvarTarefa();
+                                      },
+                                    ),
+                                  ),
+                                ],
                               ),
                             )
                           : const Text('Adicionar novo'),
@@ -212,21 +270,7 @@ class _HomePageState extends State<HomePage> {
                           ? IconButton(
                               icon: const Icon(Icons.send),
                               onPressed: () {
-                                if (textInput.text == "") {
-                                  return;
-                                }
-                                DatabaseReference ref = FirebaseDatabase
-                                    .instance
-                                    .ref(selectedValue.toLowerCase())
-                                    .push();
-                                ref.set({
-                                  "atividade": textInput.text,
-                                  "feito": 0,
-                                });
-                                getTodos(selectedValue);
-                                setState(() {
-                                  isEditing = false;
-                                });
+                                salvarTarefa();
                               },
                             )
                           : IconButton(
@@ -345,11 +389,13 @@ class ChecklistItem {
   bool isSelected;
   String id;
   String pessoa;
+  int ponto;
 
   ChecklistItem(
       {required this.id,
       required this.title,
       required this.isSelected,
+      required this.ponto,
       required this.pessoa});
 }
 
